@@ -1,0 +1,2324 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ledger">
+<meta name="theme-color" content="#EDF1F4">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzE0Mjg0NyIvPjx0ZXh0IHg9IjkwIiB5PSIxMTAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iODAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNFMjdENDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiQ8L3RleHQ+PC9zdmc+">
+<title>Ledger — личный финансовый хаб</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if (window.pdfjsLib) { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }</script>
+<style>
+  :root {
+    --bg: #EDF1F4;
+    --surface: #FFFFFF;
+    --surface-2: #F7F9FB;
+    --ink: #142847;
+    --ink-muted: #5B6B82;
+    --ink-faint: #8A99AE;
+    --border: #C8D2DC;
+    --border-light: #DDE4EB;
+    --accent: #E27D44;
+    --accent-soft: #FBE9DC;
+    --positive: #2D7A57;
+    --positive-soft: #DEF0E7;
+    --negative: #C03B2B;
+    --negative-soft: #F8DEDA;
+    --grid: rgba(20, 40, 71, 0.04);
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.45;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: -1px -1px;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: contain;
+  }
+  
+  .app {
+    min-height: 100vh;
+    padding-top: var(--safe-top);
+    padding-bottom: calc(72px + var(--safe-bottom));
+  }
+  
+  .view { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+  .view.active { display: block; }
+  
+  .header { margin: 8px 4px 20px; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Hero capital number — the signature */
+  .hero {
+    background: var(--ink);
+    color: var(--surface);
+    border-radius: 12px;
+    padding: 24px 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+  }
+  .hero-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .hero-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--surface);
+    position: relative;
+    line-height: 1;
+  }
+  .hero-number .currency { color: var(--accent); }
+  .hero-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    position: relative;
+    flex-wrap: wrap;
+  }
+  .hero-meta-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .hero-meta-item strong { color: var(--surface); font-weight: 500; }
+  
+  /* Mono numbers */
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .num-lg { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .num-md { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 500; }
+  .num-sm { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  
+  /* Progress bar */
+  .progress {
+    height: 6px;
+    background: var(--border-light);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .progress-fill.positive { background: var(--positive); }
+  .progress-fill.negative { background: var(--negative); }
+  
+  /* Goal row */
+  .goal {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .goal:last-child { border-bottom: none; padding-bottom: 0; }
+  .goal:first-child { padding-top: 0; }
+  .goal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .goal-name { font-size: 14px; font-weight: 500; }
+  .goal-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-muted); }
+  .goal-vals { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+  
+  /* Formula categories */
+  .category {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .category:last-child { border-bottom: none; padding-bottom: 0; }
+  .category:first-child { padding-top: 0; }
+  .category-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .cat-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .cat-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .cat-amount { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .cat-remaining {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+  }
+  
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s;
+    min-height: 44px;
+  }
+  .btn:active { opacity: 0.7; }
+  .btn-primary { background: var(--ink); color: var(--surface); width: 100%; }
+  .btn-accent { background: var(--accent); color: var(--surface); }
+  .btn-ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border-light); }
+  .btn-icon { padding: 10px; min-height: 0; }
+  
+  .fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(88px + var(--safe-bottom));
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 14px rgba(226, 125, 68, 0.35);
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fab:active { transform: scale(0.95); }
+  
+  /* Forms */
+  .field { margin-bottom: 14px; }
+  .label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .input, .select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    background: var(--surface);
+    color: var(--ink);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .input:focus, .select:focus { outline: none; border-color: var(--ink); }
+  .select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='%23142847'><path d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 10px;
+    padding-right: 36px;
+  }
+  
+  /* Transaction list */
+  .txn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .txn:last-child { border-bottom: none; }
+  .txn-left { flex: 1; min-width: 0; }
+  .txn-cat {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .txn-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+  .txn-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 12px;
+  }
+  .txn-amount.income { color: var(--positive); }
+  .txn-amount.expense { color: var(--ink); }
+  .txn-amount.save { color: var(--accent); }
+  .txn-delete {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 18px;
+    padding: 4px 8px;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  
+  /* Tab navigation */
+  .tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0 calc(8px + var(--safe-bottom));
+    z-index: 40;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .tab.active { color: var(--accent); }
+  .tab-icon { font-size: 20px; line-height: 1; }
+  
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 40, 71, 0.5);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+  .modal-backdrop.open { display: flex; animation: fadeIn 0.2s; }
+  .modal {
+    background: var(--surface);
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 20px;
+    padding-bottom: calc(20px + var(--safe-bottom));
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s;
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .modal-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+  }
+  .modal-close {
+    background: var(--surface-2);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    color: var(--ink);
+    font-size: 18px;
+    cursor: pointer;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  
+  /* Type-amount buttons */
+  .type-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding: 4px;
+    background: var(--bg);
+    border-radius: 10px;
+  }
+  .type-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+  .type-btn.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(20,40,71,0.08); }
+  
+  /* Checklist */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--surface);
+    margin-top: 1px;
+  }
+  .check-item.done .check-box { background: var(--positive); border-color: var(--positive); }
+  .check-text { flex: 1; font-size: 14px; }
+  .check-item.done .check-text { color: var(--ink-muted); text-decoration: line-through; }
+  
+  /* Calculator */
+  .calc-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .calc-result {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .calc-result-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .calc-result-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  
+  /* Phase badge */
+  .phase-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .phase-badge.fund-done { background: var(--positive-soft); color: var(--positive); }
+  
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-muted);
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+  
+  /* Quick actions row */
+  .quick-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .info-text {
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+  
+  .divider-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    margin: 20px 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .divider-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
+  }
+  
+  /* Bank import */
+  .bank-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .bank-card {
+    padding: 12px 8px;
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    text-align: center;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+  }
+  .bank-card:active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .bank-card strong { display: block; font-size: 13px; color: var(--ink); margin-bottom: 4px; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: none; letter-spacing: 0; }
+  
+  .import-modal { max-height: 90vh; display: flex; flex-direction: column; padding-bottom: 0; }
+  .import-scroll {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 16px;
+    margin: 0 -4px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  .import-sticky-footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    padding: 12px 0 calc(12px + var(--safe-bottom));
+    border-top: 1px solid var(--border);
+    margin: 0 -4px;
+    padding-left: 4px;
+    padding-right: 4px;
+    display: grid;
+    gap: 8px;
+    z-index: 10;
+  }
+  .import-sticky-footer::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0));
+    pointer-events: none;
+  }
+  .import-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+    background: var(--surface-2);
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+  .import-stat { text-align: center; }
+  .import-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .import-stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  
+  .import-toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 16px;
+    font-size: 12px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .pill.active { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  
+  .import-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .import-row.disabled { opacity: 0.5; }
+  .import-row.duplicate { background: var(--surface-2); margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
+  .import-check {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--surface);
+    cursor: pointer;
+  }
+  .import-row.selected .import-check { background: var(--accent); border-color: var(--accent); }
+  .import-info { min-width: 0; }
+  .import-info-line1 { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .import-info-line2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .import-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .import-amount.positive { color: var(--positive); }
+  .import-amount.negative { color: var(--ink); }
+  .import-row select {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    background: var(--surface);
+    color: var(--ink-muted);
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='%235B6B82'><path d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 8px;
+    padding-right: 28px;
+    width: 100%;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 30px;
+    color: var(--ink-muted);
+  }
+  .spinner {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border: 2.5px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  .badge-bank {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-right: 6px;
+  }
+  .badge-bank.freedom { background: #DEF0E7; color: #1f5c44; }
+  .badge-bank.halyk { background: #E0EFFA; color: #15577A; }
+  .badge-bank.kaspi { background: #FFE2E2; color: #B33; }
+  
+  /* Account cards */
+  .account-card {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .account-card:last-child { border-bottom: none; padding-bottom: 0; }
+  .account-card:first-child { padding-top: 0; }
+  .account-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .account-name { font-size: 14px; font-weight: 500; }
+  .account-balance {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+  .account-warn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--negative);
+    margin-top: 6px;
+    padding: 4px 8px;
+    background: var(--negative-soft);
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .account-ok {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--positive);
+    margin-top: 6px;
+  }
+  
+  .account-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .account-row:last-child { border-bottom: none; }
+  .account-row input { width: 110px; text-align: right; }
+  .account-row input[type=date] { width: 140px; }
+  
+  /* Import preview */
+  .import-status {
+    padding: 10px 14px;
+    background: var(--accent-soft);
+    color: var(--ink);
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+  .import-status.error { background: var(--negative-soft); color: var(--negative); }
+  .import-status.show { display: block; }
+  
+  .preview-summary {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .preview-summary strong { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  
+  .preview-filter {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-chip {
+    padding: 6px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    font-size: 12px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    flex-shrink: 0;
+  }
+  .filter-chip.active { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  
+  .preview-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .preview-row.skip { opacity: 0.45; }
+  .preview-check {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--surface);
+    cursor: pointer;
+    margin-top: 2px;
+  }
+  .preview-check.checked { background: var(--positive); border-color: var(--positive); }
+  .preview-info { flex: 1; min-width: 0; }
+  .preview-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .preview-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+  .preview-amt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .preview-amt.minus { color: var(--ink); }
+  .preview-amt.plus { color: var(--positive); }
+  .preview-desc {
+    font-size: 12px;
+    color: var(--ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 2px 0 4px;
+  }
+  .preview-cat-select {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 22px 3px 8px;
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--ink-muted);
+    border: 1px solid var(--border-light);
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='%235B6B82'><path d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 7px;
+  }
+  .preview-cat-select.bucket-needs { background-color: #DEE9F4; color: #1E4D7B; }
+  .preview-cat-select.bucket-reward { background-color: var(--accent-soft); color: var(--accent); }
+  .preview-cat-select.bucket-assets { background-color: var(--positive-soft); color: var(--positive); }
+  .preview-cat-select.bucket-stability { background-color: var(--positive-soft); color: var(--positive); }
+  .preview-cat-select.bucket-skip { background-color: var(--negative-soft); color: var(--negative); }
+  
+  .preview-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    padding: 12px 0 4px;
+    border-top: 1px solid var(--border-light);
+  }
+  .preview-actions .btn { flex: 1; }
+  
+  .modal.preview-modal { max-height: 92vh; }
+  
+  .raw-text {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    max-height: 200px;
+    overflow: auto;
+    color: var(--ink-muted);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-home">
+    <div class="header">
+      <div class="eyebrow">17 июня 2026</div>
+      <h1 class="h1">Сводка</h1>
+    </div>
+    
+    <div class="hero">
+      <div class="hero-label">Капитал</div>
+      <div class="hero-number"><span class="currency">₸</span> <span id="totalCapital">0</span></div>
+      <div class="hero-meta">
+        <div class="hero-meta-item">Подушка <strong id="metaFund">0 ₸</strong></div>
+        <div class="hero-meta-item">Кошелёк <strong id="metaWallet">0 ₸</strong></div>
+        <div class="hero-meta-item" id="phaseLabel">Фаза 1 · сбор фонда</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">
+        <span>Счета</span>
+        <span class="mono" style="text-transform:none;letter-spacing:0;">${'' /* filled in renderHero */}</span>
+      </div>
+      <div id="accountsList"></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">
+        <span>Цели</span>
+        <span id="goalsSubtitle" class="mono" style="text-transform:none;letter-spacing:0;">—</span>
+      </div>
+      <div id="goalsList"></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">
+        <span>Месяц по формуле 25/15/50/10</span>
+        <span id="monthLabel" class="mono" style="text-transform:none;letter-spacing:0;">июнь</span>
+      </div>
+      <div id="categoriesList"></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Последние операции</span></div>
+      <div id="recentTxns"></div>
+    </div>
+  </div>
+  
+  <!-- TRANSACTIONS -->
+  <div class="view" id="view-txns">
+    <div class="header">
+      <div class="eyebrow">Журнал</div>
+      <h1 class="h1">Операции</h1>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">
+        <span>Все операции</span>
+        <span id="txnCount" class="mono" style="text-transform:none;letter-spacing:0;">0</span>
+      </div>
+      <div id="allTxns"></div>
+    </div>
+  </div>
+  
+  <!-- CAPITAL / GOALS -->
+  <div class="view" id="view-capital">
+    <div class="header">
+      <div class="eyebrow">План на 10 лет</div>
+      <h1 class="h1">Капитал</h1>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Чеклист фазы</span></div>
+      <div id="checklist"></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Калькулятор сложного процента</span></div>
+      <div class="calc-row">
+        <div>
+          <div class="label">Вклад в месяц, ₸</div>
+          <input class="input mono" type="number" id="calcPmt" value="100000">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="label">Срок, лет</div>
+          <input class="input mono" type="number" id="calcYears" value="10">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="label">Ставка в год, %</div>
+          <input class="input mono" type="number" id="calcRate" value="12" step="0.1">
+        </div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-label">Итоговый капитал</div>
+        <div class="calc-result-value" id="calcResult">—</div>
+      </div>
+      <div class="info-text" id="calcBreakdown"></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Памятка по формуле</span></div>
+      <div class="info-text" style="line-height:1.65;">
+        <strong>25% Активы (90/10)</strong> — индексные фонды и облигации. Vanguard S&P 500, iShares MSCI World, iShares USD TB 7-10y. Запускается после сбора фонда.<br><br>
+        <strong>15% Стабильность</strong> — Копилка Freedom 16.73%. Цель: 410 000 ₸ (5× базовых трат).<br><br>
+        <strong>50% Нужды</strong> — жильё, еда, транспорт, рассрочки, связь.<br><br>
+        <strong>10% Вознаграждение</strong> — без чувства вины: компы, девушка, опыт.
+      </div>
+    </div>
+  </div>
+  
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="header">
+      <div class="eyebrow">Параметры</div>
+      <h1 class="h1">Настройки</h1>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Доход</span></div>
+      <div class="field">
+        <div class="label">Зарплата, ₸/мес</div>
+        <input class="input mono" type="number" id="setSalary">
+      </div>
+      <div class="field">
+        <div class="label">День зарплаты</div>
+        <input class="input mono" type="number" id="setSalaryDay" min="1" max="31">
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Цели</span></div>
+      <div class="field">
+        <div class="label">Фонд стабильности, ₸</div>
+        <input class="input mono" type="number" id="setFundGoal">
+      </div>
+      <div class="field">
+        <div class="label">Базовые расходы (без зп), ₸/мес</div>
+        <input class="input mono" type="number" id="setBaseExpenses">
+        <div class="info-text">Фонд = базовые × 5 месяцев</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Счета · якоря баланса</span></div>
+      <div class="info-text" style="margin-bottom:12px;">Якорь — это то, что банк сказал «у тебя именно столько». От этой точки приложение считает текущий баланс с учётом всех операций. При импорте свежей выписки якорь обновляется автоматически.</div>
+      <div id="accountsEditor"></div>
+      <button class="btn btn-ghost" onclick="saveAccounts()" style="width:100%;margin-top:12px;">Сохранить якоря</button>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Импорт выписки банка</span></div>
+      <div class="bank-grid">
+        <div class="bank-card" onclick="pickBankPdf('freedom')"><strong>Freedom</strong>Super Card</div>
+        <div class="bank-card" onclick="pickBankPdf('halyk')"><strong>Halyk</strong>Текущий счёт</div>
+        <div class="bank-card" onclick="pickBankPdf('kaspi')"><strong>Kaspi</strong>Gold</div>
+      </div>
+      <input type="file" id="bankPdfInput" accept=".pdf" style="display:none;" onchange="handleBankPdf(event)">
+      <div class="info-text">Выбери банк и загрузи PDF выписку из приложения. Парсер сам найдёт операции и предложит категории — ты только подтвердишь.</div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title"><span>Данные</span></div>
+      <button class="btn btn-ghost" onclick="exportData()" style="width:100%;margin-bottom:8px;">Экспорт в файл</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('importInput').click()" style="width:100%;margin-bottom:8px;">Импорт из файла</button>
+      <input type="file" id="importInput" accept=".json" style="display:none;" onchange="importData(event)">
+      <button class="btn btn-ghost" onclick="resetData()" style="width:100%;color:var(--negative);">Сбросить всё</button>
+      <div class="info-text" style="margin-top:10px;">Данные хранятся только на этом устройстве. Регулярно делай экспорт — это твой бэкап.</div>
+    </div>
+    
+    <button class="btn btn-primary" onclick="saveSettings()">Сохранить</button>
+  </div>
+  
+  <button class="fab" onclick="openAddModal()">+</button>
+  
+  <!-- Bottom tab bar -->
+  <nav class="tabbar">
+    <button class="tab active" data-view="home"><div class="tab-icon">◐</div>Сводка</button>
+    <button class="tab" data-view="txns"><div class="tab-icon">≡</div>Журнал</button>
+    <button class="tab" data-view="capital"><div class="tab-icon">↗</div>Капитал</button>
+    <button class="tab" data-view="settings"><div class="tab-icon">⚙</div>Настройки</button>
+  </nav>
+</div>
+
+<!-- Bank import preview modal -->
+<div class="modal-backdrop" id="importModal">
+  <div class="modal import-modal">
+    <div class="modal-head">
+      <div class="modal-title" id="importTitle">Импорт выписки</div>
+      <button class="modal-close" onclick="closeImportModal()">×</button>
+    </div>
+    <div id="importBody"></div>
+  </div>
+</div>
+
+<!-- Add transaction modal -->
+<div class="modal-backdrop" id="addModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Новая операция</div>
+      <button class="modal-close" onclick="closeAddModal()">×</button>
+    </div>
+    
+    <div class="type-toggle">
+      <button class="type-btn active" data-type="expense" onclick="setTxnType('expense')">Расход</button>
+      <button class="type-btn" data-type="save" onclick="setTxnType('save')">В Копилку</button>
+      <button class="type-btn" data-type="income" onclick="setTxnType('income')">Доход</button>
+    </div>
+    
+    <div class="field" id="txnAccountField">
+      <div class="label">Счёт</div>
+      <select class="select" id="txnAccount"></select>
+    </div>
+    
+    <div class="field">
+      <div class="label">Сумма, ₸</div>
+      <input class="input mono" type="number" id="txnAmount" placeholder="0" inputmode="numeric">
+    </div>
+    
+    <div class="field" id="txnCatField">
+      <div class="label">Категория</div>
+      <select class="select" id="txnCategory"></select>
+    </div>
+    
+    <div class="field">
+      <div class="label">Заметка (опционально)</div>
+      <input class="input" type="text" id="txnNote" placeholder="например, такси домой">
+    </div>
+    
+    <div class="field">
+      <div class="label">Дата</div>
+      <input class="input mono" type="date" id="txnDate">
+    </div>
+    
+    <button class="btn btn-primary" onclick="saveTxn()">Записать</button>
+  </div>
+</div>
+
+<script>
+// =================== STATE ===================
+const STORAGE_KEY = 'ledger_v1';
+let state = {
+  settings: {
+    salary: 400000,
+    salaryDay: 15,
+    fundGoal: 410000,
+    baseExpenses: 82000
+  },
+  accounts: [
+    { id: 'freedom_main', name: 'Freedom Super Card', bank: 'freedom', type: 'card', anchorBalance: 2660, anchorDate: '2026-06-17', threshold: 100000, thresholdNote: 'нужно ≥100к каждый день для ставки 13.8%' },
+    { id: 'halyk_main',   name: 'Halyk зарплатная',   bank: 'halyk',   type: 'card', anchorBalance: 17599, anchorDate: '2026-06-17' },
+    { id: 'kaspi_main',   name: 'Kaspi Gold',         bank: 'kaspi',   type: 'card', anchorBalance: 0,     anchorDate: '2026-06-17' },
+    { id: 'kopilka',      name: 'Копилка Freedom',    bank: 'freedom_savings', type: 'savings', anchorBalance: 55000, anchorDate: '2026-06-17', rate: 16.73 }
+  ],
+  txns: [],
+  checklist: {
+    'p1_kopilka': true,
+    'p1_first': true,
+    'p1_autopay': false,
+    'p1_fund_done': false,
+    'p2_rassrochka_closed': false,
+    'p2_kapital_opened': false,
+    'p2_broker_opened': false,
+    'p2_etf_bought': false
+  }
+};
+let currentTxnType = 'expense';
+let currentTxnAccount = 'freedom_main';
+
+// Formula percentages
+const FORMULA = {
+  assets:    { pct: 0.25, name: 'Активы',        emoji: '↗' },
+  stability: { pct: 0.15, name: 'Стабильность',  emoji: '◆' },
+  needs:     { pct: 0.50, name: 'Нужды',         emoji: '◯' },
+  reward:    { pct: 0.10, name: 'Вознаграждение', emoji: '✦' }
+};
+
+const EXPENSE_CATEGORIES = [
+  { id: 'needs', name: 'Нужды (еда, транспорт, связь)', bucket: 'needs' },
+  { id: 'rassrochka', name: 'Рассрочка / долги', bucket: 'needs' },
+  { id: 'reward_compy', name: 'Компьютерный клуб', bucket: 'reward' },
+  { id: 'reward_gf', name: 'Девушка', bucket: 'reward' },
+  { id: 'reward_other', name: 'Другие удовольствия', bucket: 'reward' },
+  { id: 'assets', name: 'Инвестиции (активы)', bucket: 'assets' }
+];
+
+// =================== STORAGE ===================
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      state = { ...state, ...saved, settings: { ...state.settings, ...saved.settings }, checklist: { ...state.checklist, ...saved.checklist } };
+      // Migration v1 → v2: if accounts not present, build them from old walletCurrent/fundCurrent
+      if (!saved.accounts || saved.accounts.length === 0) {
+        const wallet = (saved.settings && saved.settings.walletCurrent) || 0;
+        const fund = (saved.settings && saved.settings.fundCurrent) || 0;
+        state.accounts = [
+          { id: 'freedom_main', name: 'Freedom Super Card', bank: 'freedom', type: 'card', anchorBalance: wallet, anchorDate: todayISO(), threshold: 100000, thresholdNote: 'нужно ≥100к каждый день для ставки 13.8%' },
+          { id: 'halyk_main',   name: 'Halyk зарплатная',   bank: 'halyk',   type: 'card', anchorBalance: 0, anchorDate: todayISO() },
+          { id: 'kaspi_main',   name: 'Kaspi Gold',         bank: 'kaspi',   type: 'card', anchorBalance: 0, anchorDate: todayISO() },
+          { id: 'kopilka',      name: 'Копилка Freedom',    bank: 'freedom_savings', type: 'savings', anchorBalance: fund, anchorDate: todayISO(), rate: 16.73 }
+        ];
+        // Migrate old txns: guess accountId from bank or 'freedom_main' for manual
+        state.txns.forEach(t => {
+          if (!t.accountId) {
+            if (t.type === 'save') t.accountId = 'kopilka';
+            else if (t.bank === 'freedom') t.accountId = 'freedom_main';
+            else if (t.bank === 'halyk') t.accountId = 'halyk_main';
+            else if (t.bank === 'kaspi') t.accountId = 'kaspi_main';
+            else t.accountId = 'freedom_main';
+          }
+        });
+      }
+    }
+  } catch (e) { console.error(e); }
+}
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { alert('Не удалось сохранить: ' + e.message); }
+}
+
+// =================== ACCOUNTS ===================
+function getAccount(id) { return state.accounts.find(a => a.id === id); }
+
+function getAccountBalance(accountId) {
+  const acc = getAccount(accountId);
+  if (!acc) return 0;
+  let bal = acc.anchorBalance || 0;
+  state.txns.forEach(t => {
+    if (t.accountId !== accountId) return;
+    if (!t.date || t.date < acc.anchorDate) return;
+    // expense → minus, income → plus, save → plus (for kopilka receiving) or minus (for source)
+    if (t.type === 'expense') bal -= t.amount;
+    else if (t.type === 'income') bal += t.amount;
+    else if (t.type === 'save') {
+      // save: positive on destination (kopilka), but for source it's the partner txn
+      if (accountId === 'kopilka') bal += t.amount;
+      else bal -= t.amount;
+    }
+  });
+  return bal;
+}
+
+function getTotalCapital() {
+  return state.accounts.reduce((s, a) => s + getAccountBalance(a.id), 0);
+}
+
+function getKopilkaBalance() { return getAccountBalance('kopilka'); }
+function getCardsBalance() {
+  return state.accounts.filter(a => a.type === 'card').reduce((s, a) => s + getAccountBalance(a.id), 0);
+}
+
+// =================== HELPERS ===================
+function fmt(n) {
+  return Math.round(n).toLocaleString('ru-RU');
+}
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+function monthKey(dateStr) {
+  return dateStr.slice(0, 7);
+}
+function currentMonth() {
+  return todayISO().slice(0, 7);
+}
+function monthName(key) {
+  const [y, m] = key.split('-');
+  const names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return names[+m - 1] + ' ' + y;
+}
+
+// =================== RENDER ===================
+function render() {
+  renderHero();
+  renderGoals();
+  renderCategories();
+  renderRecent();
+  renderAllTxns();
+  renderChecklist();
+  renderSettings();
+  renderCalculator();
+}
+
+function renderHero() {
+  const total = getTotalCapital();
+  document.getElementById('totalCapital').textContent = fmt(total);
+  document.getElementById('metaFund').textContent = fmt(getKopilkaBalance()) + ' ₸';
+  document.getElementById('metaWallet').textContent = fmt(getCardsBalance()) + ' ₸';
+  
+  const fundDone = getKopilkaBalance() >= state.settings.fundGoal;
+  const phase = fundDone ? 'Фаза 2 · капитал' : 'Фаза 1 · сбор фонда';
+  document.getElementById('phaseLabel').textContent = phase;
+  
+  renderAccounts();
+}
+
+function renderAccounts() {
+  const el = document.getElementById('accountsList');
+  if (!el) return;
+  el.innerHTML = state.accounts.map(a => {
+    const bal = getAccountBalance(a.id);
+    const isLow = a.threshold && bal < a.threshold;
+    const rate = a.rate ? ` · ${a.rate}%` : '';
+    const warn = isLow
+      ? `<div class="account-warn">⚠ ниже ${fmt(a.threshold)} — ${a.thresholdNote}</div>`
+      : (a.threshold ? `<div class="account-ok">✓ выше ${fmt(a.threshold)} — ставка активна</div>` : '');
+    return `
+      <div class="account-card ${isLow ? 'warn' : ''}">
+        <div class="account-head">
+          <div>
+            <span class="badge-bank ${a.bank.replace('_savings','')}">${a.bank.replace('_savings','')}</span>
+            <span class="account-name">${a.name}${rate}</span>
+          </div>
+          <div class="account-balance">${fmt(bal)} ₸</div>
+        </div>
+        ${warn}
+      </div>
+    `;
+  }).join('');
+}
+
+function getTotalAssets() {
+  return state.txns.filter(t => t.bucket === 'assets').reduce((s, t) => s + t.amount, 0);
+}
+
+function renderGoals() {
+  const s = state.settings;
+  const kopilka = getKopilkaBalance();
+  const cardsTotal = getCardsBalance();
+  const cushion = s.fundGoal + 100000;
+  const goals = [
+    { name: 'Фонд стабильности', current: kopilka, target: s.fundGoal },
+    { name: 'Полная подушка (фонд + 100к на карте)', current: kopilka + Math.min(cardsTotal, 100000), target: cushion }
+  ];
+  
+  document.getElementById('goalsList').innerHTML = goals.map(g => {
+    const pct = Math.min(100, (g.current / g.target) * 100);
+    const cls = pct >= 100 ? 'positive' : '';
+    return `
+      <div class="goal">
+        <div class="goal-head">
+          <div class="goal-name">${g.name}</div>
+          <div class="goal-pct">${pct.toFixed(0)}%</div>
+        </div>
+        <div class="progress"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>
+        <div class="goal-vals">${fmt(g.current)} ₸ / ${fmt(g.target)} ₸</div>
+      </div>
+    `;
+  }).join('');
+  
+  const monthlySave = state.settings.salary * 0.40;
+  const remaining = Math.max(0, state.settings.fundGoal - kopilka);
+  const monthsLeft = monthlySave > 0 ? Math.ceil(remaining / monthlySave) : 0;
+  document.getElementById('goalsSubtitle').textContent = remaining === 0 ? 'фонд собран' : `~${monthsLeft} мес до фонда`;
+}
+
+function renderCategories() {
+  const month = currentMonth();
+  document.getElementById('monthLabel').textContent = monthName(month).split(' ')[0];
+  
+  const buckets = { assets: 0, stability: 0, needs: 0, reward: 0 };
+  state.txns.forEach(t => {
+    if (t.date && monthKey(t.date) === month && t.bucket && t.type !== 'income' && !t.isTransfer) {
+      buckets[t.bucket] = (buckets[t.bucket] || 0) + t.amount;
+    }
+  });
+  
+  const cats = Object.entries(FORMULA).map(([key, f]) => {
+    const limit = state.settings.salary * f.pct;
+    const spent = buckets[key] || 0;
+    const pct = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0;
+    const over = spent > limit;
+    const remaining = limit - spent;
+    
+    return `
+      <div class="category">
+        <div class="category-head">
+          <div class="cat-name">
+            <span style="color:var(--accent);">${f.emoji}</span>
+            ${f.name}
+            <span class="cat-pct">${(f.pct * 100).toFixed(0)}%</span>
+          </div>
+          <div class="cat-amount">${fmt(spent)} / ${fmt(limit)} ₸</div>
+        </div>
+        <div class="progress"><div class="progress-fill ${over ? 'negative' : ''}" style="width:${pct}%"></div></div>
+        <div class="cat-remaining">${over ? 'Перерасход ' + fmt(spent - limit) : 'Осталось ' + fmt(remaining)} ₸</div>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('categoriesList').innerHTML = cats;
+}
+
+function renderRecent() {
+  const recent = [...state.txns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const el = document.getElementById('recentTxns');
+  if (recent.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">○</div>Пока пусто — добавь первую операцию кнопкой +</div>`;
+    return;
+  }
+  el.innerHTML = recent.map(renderTxnRow).join('');
+}
+
+function renderAllTxns() {
+  const all = [...state.txns].sort((a, b) => b.date.localeCompare(a.date));
+  document.getElementById('txnCount').textContent = all.length;
+  const el = document.getElementById('allTxns');
+  if (all.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">○</div>Журнал пуст</div>`;
+    return;
+  }
+  el.innerHTML = all.map(renderTxnRow).join('');
+}
+
+function renderTxnRow(t) {
+  const cat = EXPENSE_CATEGORIES.find(c => c.id === t.category);
+  let catName = cat ? cat.name : (t.type === 'save' ? 'В Копилку' : t.type === 'income' ? 'Доход' : 'Операция');
+  if (t.isTransfer) catName = 'Перевод между своими';
+  const cls = t.type === 'income' ? 'income' : t.type === 'save' ? 'save' : 'expense';
+  const sign = t.isTransfer ? '↔' : t.type === 'income' ? '+' : t.type === 'save' ? '→' : '−';
+  const date = t.date ? t.date.slice(5).replace('-', '.') : '';
+  const bankBadge = t.bank ? `<span class="badge-bank ${t.bank}">${t.bank}</span>` : '';
+  return `
+    <div class="txn">
+      <div class="txn-left">
+        <div class="txn-cat">${bankBadge}${catName}</div>
+        <div class="txn-meta">${date}${t.note ? ' · ' + t.note : ''}</div>
+      </div>
+      <div class="txn-amount ${cls}">${sign} ${fmt(t.amount)} ₸</div>
+      <button class="txn-delete" onclick="deleteTxn('${t.id}')" aria-label="удалить">×</button>
+    </div>
+  `;
+}
+
+function renderChecklist() {
+  const fundDone = getKopilkaBalance() >= state.settings.fundGoal;
+  state.checklist.p1_fund_done = fundDone;
+  
+  const items = [
+    { id: 'p1_kopilka', text: 'Открыта Копилка Freedom (13 мес, 16.73%)', phase: 'Фаза 1' },
+    { id: 'p1_first', text: 'Сделан первый взнос', phase: 'Фаза 1' },
+    { id: 'p1_autopay', text: 'Настроен автоперевод 160 000 ₸ в день зарплаты', phase: 'Фаза 1' },
+    { id: 'p1_fund_done', text: 'Фонд стабильности собран (410 000 ₸)', phase: 'Фаза 1' },
+    { id: 'p2_rassrochka_closed', text: 'Рассрочка закрыта', phase: 'Фаза 2' },
+    { id: 'p2_kapital_opened', text: 'Открыт депозит «Капитал» Freedom (20%)', phase: 'Фаза 2' },
+    { id: 'p2_broker_opened', text: 'Открыт счёт в Freedom Finance Global', phase: 'Фаза 2' },
+    { id: 'p2_etf_bought', text: 'Куплены первые ETF (S&P 500 + MSCI World + bonds)', phase: 'Фаза 2' }
+  ];
+  
+  let currentPhase = '';
+  document.getElementById('checklist').innerHTML = items.map(item => {
+    const done = state.checklist[item.id];
+    let phaseHead = '';
+    if (item.phase !== currentPhase) {
+      currentPhase = item.phase;
+      phaseHead = `<div class="divider-label">${item.phase}</div>`;
+    }
+    return phaseHead + `
+      <div class="check-item ${done ? 'done' : ''}" onclick="toggleCheck('${item.id}')">
+        <div class="check-box">${done ? '✓' : ''}</div>
+        <div class="check-text">${item.text}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderSettings() {
+  document.getElementById('setSalary').value = state.settings.salary;
+  document.getElementById('setSalaryDay').value = state.settings.salaryDay;
+  document.getElementById('setFundGoal').value = state.settings.fundGoal;
+  document.getElementById('setBaseExpenses').value = state.settings.baseExpenses;
+  renderAccountsEditor();
+}
+
+function renderAccountsEditor() {
+  const el = document.getElementById('accountsEditor');
+  if (!el) return;
+  el.innerHTML = state.accounts.map(a => `
+    <div style="padding:10px 0;border-bottom:1px solid var(--border-light);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:500;">${a.name}</div>
+        <div class="mono" style="font-size:11px;color:var(--ink-muted);">тек: ${fmt(getAccountBalance(a.id))} ₸</div>
+      </div>
+      <div class="account-row">
+        <div class="mono" style="font-size:11px;color:var(--ink-muted);">Якорь</div>
+        <input class="input mono" type="number" data-account="${a.id}" data-field="anchorBalance" value="${a.anchorBalance}" placeholder="0">
+        <input class="input mono" type="date" data-account="${a.id}" data-field="anchorDate" value="${a.anchorDate}">
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveAccounts() {
+  document.querySelectorAll('#accountsEditor input').forEach(inp => {
+    const accId = inp.dataset.account;
+    const field = inp.dataset.field;
+    const acc = getAccount(accId);
+    if (!acc) return;
+    if (field === 'anchorBalance') acc[field] = +inp.value || 0;
+    else if (field === 'anchorDate') acc[field] = inp.value || todayISO();
+  });
+  save();
+  render();
+  alert('Якоря обновлены');
+}
+
+function renderCalculator() {
+  const pmt = +document.getElementById('calcPmt').value || 0;
+  const yrs = +document.getElementById('calcYears').value || 0;
+  const rate = (+document.getElementById('calcRate').value || 0) / 100;
+  const r = rate / 12;
+  let bal = 0;
+  for (let m = 1; m <= yrs * 12; m++) bal = bal * (1 + r) + pmt;
+  const contributed = pmt * yrs * 12;
+  const growth = bal - contributed;
+  document.getElementById('calcResult').textContent = fmt(bal) + ' ₸';
+  document.getElementById('calcBreakdown').innerHTML = 
+    `Из них своих вложено: <strong>${fmt(contributed)} ₸</strong><br>Заработано процентами: <strong style="color:var(--positive);">${fmt(growth)} ₸</strong>`;
+}
+
+// =================== ACTIONS ===================
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
+  window.scrollTo(0, 0);
+}
+
+function openAddModal() {
+  document.getElementById('addModal').classList.add('open');
+  document.getElementById('txnDate').value = todayISO();
+  document.getElementById('txnAmount').value = '';
+  document.getElementById('txnNote').value = '';
+  // Populate accounts dropdown (cards only by default; for 'save' will show source cards)
+  const sel = document.getElementById('txnAccount');
+  sel.innerHTML = state.accounts.filter(a => a.type === 'card').map(a => 
+    `<option value="${a.id}">${a.name} (${fmt(getAccountBalance(a.id))} ₸)</option>`
+  ).join('');
+  setTxnType('expense');
+  setTimeout(() => document.getElementById('txnAmount').focus(), 100);
+}
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+function setTxnType(type) {
+  currentTxnType = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  const catField = document.getElementById('txnCatField');
+  const sel = document.getElementById('txnCategory');
+  const accField = document.getElementById('txnAccountField');
+  const accLabel = accField.querySelector('.label');
+  
+  if (type === 'expense') {
+    catField.style.display = 'block';
+    sel.innerHTML = EXPENSE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    accLabel.textContent = 'Счёт';
+  } else if (type === 'save') {
+    catField.style.display = 'none';
+    accLabel.textContent = 'С какого счёта в Копилку';
+  } else {
+    catField.style.display = 'none';
+    accLabel.textContent = 'На какой счёт пришли деньги';
+  }
+}
+
+function saveTxn() {
+  const amount = +document.getElementById('txnAmount').value;
+  if (!amount || amount <= 0) { alert('Введи сумму'); return; }
+  const date = document.getElementById('txnDate').value || todayISO();
+  const note = document.getElementById('txnNote').value.trim();
+  const accountId = document.getElementById('txnAccount').value;
+  
+  if (currentTxnType === 'expense') {
+    const catId = document.getElementById('txnCategory').value;
+    const cat = EXPENSE_CATEGORIES.find(c => c.id === catId);
+    state.txns.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type: 'expense',
+      amount, date, note,
+      category: catId,
+      bucket: cat.bucket,
+      accountId
+    });
+  } else if (currentTxnType === 'save') {
+    // Two-sided: from source card to kopilka
+    const baseId = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    state.txns.push({
+      id: baseId,
+      type: 'save',
+      amount, date, note: note || 'Перевод в Копилку',
+      accountId,        // source card → debited
+      bucket: 'stability',
+      isTransfer: true
+    });
+    state.txns.push({
+      id: baseId + '_to',
+      type: 'save',
+      amount, date, note: note || 'Перевод в Копилку',
+      accountId: 'kopilka', // destination → credited
+      bucket: 'stability',
+      isTransfer: true,
+      pairedWith: baseId
+    });
+  } else if (currentTxnType === 'income') {
+    state.txns.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type: 'income',
+      amount, date, note,
+      accountId
+    });
+  }
+  
+  save();
+  render();
+  closeAddModal();
+}
+
+function deleteTxn(id) {
+  if (!confirm('Удалить операцию?')) return;
+  const t = state.txns.find(x => x.id === id);
+  if (!t) return;
+  // If save-pair, remove both sides
+  const toRemove = new Set([id]);
+  state.txns.forEach(x => {
+    if (x.pairedWith === id) toRemove.add(x.id);
+    if (t.pairedWith && x.id === t.pairedWith) toRemove.add(x.id);
+    if (t.pairedWith && x.pairedWith === t.pairedWith) toRemove.add(x.id);
+  });
+  state.txns = state.txns.filter(x => !toRemove.has(x.id));
+  save();
+  render();
+}
+
+function toggleCheck(id) {
+  if (id === 'p1_fund_done') return; // auto-computed
+  state.checklist[id] = !state.checklist[id];
+  save();
+  renderChecklist();
+}
+
+function saveSettings() {
+  state.settings.salary = +document.getElementById('setSalary').value || 0;
+  state.settings.salaryDay = +document.getElementById('setSalaryDay').value || 1;
+  const baseExp = +document.getElementById('setBaseExpenses').value || 0;
+  state.settings.baseExpenses = baseExp;
+  state.settings.fundGoal = +document.getElementById('setFundGoal').value || (baseExp * 5);
+  save();
+  render();
+  alert('Сохранено');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ledger-backup-' + todayISO() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.settings || !data.txns) throw new Error('Неверный формат');
+      if (!confirm('Заменить все текущие данные на содержимое файла?')) return;
+      state = { ...state, ...data, settings: { ...state.settings, ...data.settings }, checklist: { ...state.checklist, ...data.checklist } };
+      save();
+      render();
+      alert('Импортировано');
+    } catch (err) { alert('Ошибка: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function resetData() {
+  if (!confirm('Удалить ВСЕ данные? Это необратимо.')) return;
+  if (!confirm('Точно? Сначала сделай экспорт.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+// =================== BANK PDF IMPORT ===================
+let currentImportBank = null;
+let parsedTxns = []; // working set in import modal
+let importFilter = 'all';
+
+// Category keywords — applied to "details" text to guess category
+const CATEGORY_RULES = [
+  // Transport (needs)
+  { kw: /YANDEX\.GO(?!\s*SCOOTERS)|ABAI STATION|SAIRAN \d+ STATION|BAIKONYR STATION|MOMYSHULY \d STATION|BAYTEREK STATION/i, cat: 'needs', tag: 'транспорт' },
+  // Scooters — also transport-ish but more lifestyle, mark as needs by default
+  { kw: /WHOOSH|JET SHARING|JETSHARING|YANDEX\.GO SCOOTERS|JETPAY/i, cat: 'needs', tag: 'самокат' },
+  // Food / groceries
+  { kw: /MAGNUM|A-DONER|YANDEX\.EDA|FOOD RETAIL|CU BAYZAKOVA|CU CENTRAL ASIA|TOO "CU/i, cat: 'needs', tag: 'еда' },
+  // Local shops that look like food/groceries
+  { kw: /SEYDALINA|KAZHAKHANOV|KAZHAHANOV|RAKSANA|BAYTEMIROVA|ZEYNET|GAUHAR|KUANYSH|RAUSHAN|АЛАН|КАЖАХАНОВ|БАЙТЕМИРОВА|"ҚАЙРАТ"/i, cat: 'needs', tag: 'продукты' },
+  // Compy clubs / bars / hangouts
+  { kw: /BRO Riviera|HIGHTOWER|URBO|COFFEE/i, cat: 'reward_compy', tag: 'компы/бар' },
+  // Subscriptions — reward (entertainment subscriptions)
+  { kw: /OPENAI|CHATGPT|ANTHROPIC|CLAUDE|Spotify|SPOTIFY|Netflix|YouTube|APPLE\.COM|STEAM/i, cat: 'reward_other', tag: 'подписка' },
+  // Tickets / events
+  { kw: /Ticketon|TICKETON|CONCERT|EVENT/i, cat: 'reward_other', tag: 'билеты' },
+  // Loan repayment
+  { kw: /Погашение платежа|договор займа|FACTTA/i, cat: 'rassrochka', tag: 'рассрочка' },
+  // Self-transfers (treated separately)
+  { kw: /Между своими счетами|С карты другого банка|Перевод с карты на карту|Перевод на другую карту|Перевод вклада|На карту Freedom Finance|Пополнение входящего перевода|Прием вклада/i, cat: '_transfer', tag: 'перевод между своими' },
+  // Person-to-person transfer (could be gf or friend — leave for user)
+  { kw: /Безвозмездный перевод/i, cat: 'reward_gf', tag: 'перевод человеку' },
+  // Government / taxes
+  { kw: /RGKP|NTST|MON RK|ASTANA|КГД|MKD|НАЛОГ/i, cat: 'needs', tag: 'госорган' },
+];
+
+const BANK_NAMES = { freedom: 'Freedom Bank', halyk: 'Halyk Bank', kaspi: 'Kaspi Gold' };
+
+function categorize(details, op) {
+  const text = (details || '') + ' ' + (op || '');
+  for (const rule of CATEGORY_RULES) {
+    if (rule.kw.test(text)) return { cat: rule.cat, tag: rule.tag };
+  }
+  return { cat: 'needs', tag: 'не определено' };
+}
+
+// ---- File picker ----
+function pickBankPdf(bank) {
+  if (!window.pdfjsLib) {
+    alert('Библиотека PDF.js не загрузилась. Проверь интернет.');
+    return;
+  }
+  currentImportBank = bank;
+  document.getElementById('bankPdfInput').click();
+}
+
+async function handleBankPdf(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  
+  openImportModal();
+  showImportLoading();
+  
+  try {
+    const text = await extractPdfText(file);
+    let txns;
+    if (currentImportBank === 'freedom') txns = parseFreedom(text);
+    else if (currentImportBank === 'halyk') txns = parseHalyk(text);
+    else if (currentImportBank === 'kaspi') txns = parseKaspi(text);
+    
+    if (!txns || txns.length === 0) {
+      showImportError('Не удалось найти операции в выписке. Возможно, формат изменился — пришли образец в чат, обновим парсер.');
+      return;
+    }
+    
+    // Extract closing balance & statement date for anchor update
+    const closingBalance = extractClosingBalance(text, currentImportBank);
+    const statementDate = extractStatementDate(text, currentImportBank);
+    
+    // Categorize & mark duplicates
+    txns.forEach(t => {
+      const { cat, tag } = categorize(t.details, t.op);
+      t.category = cat;
+      t.tag = tag;
+      t.bank = currentImportBank;
+      t.id = `${currentImportBank}_${t.date}_${Math.round(t.amount)}_${(t.details || '').slice(0, 20).replace(/\W/g, '')}`;
+      t.selected = (cat !== '_transfer');
+      t.duplicate = state.txns.some(x => x.importId === t.id);
+    });
+    
+    parsedTxns = txns;
+    parsedClosingBalance = closingBalance;
+    parsedStatementDate = statementDate;
+    showImportPreview();
+  } catch (err) {
+    console.error(err);
+    showImportError('Ошибка чтения PDF: ' + err.message);
+  }
+}
+
+let parsedClosingBalance = null;
+let parsedStatementDate = null;
+
+// ---- PDF text extraction ----
+async function extractPdfText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const lines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    // Group text items by Y position into lines
+    const items = content.items.map(it => ({
+      text: it.str,
+      y: Math.round(it.transform[5]),
+      x: it.transform[4]
+    }));
+    // Sort by Y desc, then X asc
+    const byLine = new Map();
+    items.forEach(it => {
+      // bucket by ~3px Y tolerance
+      const yKey = Math.round(it.y / 3) * 3;
+      if (!byLine.has(yKey)) byLine.set(yKey, []);
+      byLine.get(yKey).push(it);
+    });
+    const sortedLines = [...byLine.entries()].sort((a, b) => b[0] - a[0]);
+    for (const [_, lineItems] of sortedLines) {
+      lineItems.sort((a, b) => a.x - b.x);
+      const line = lineItems.map(it => it.text).join(' ').replace(/\s+/g, ' ').trim();
+      if (line) lines.push(line);
+    }
+  }
+  return lines;
+}
+
+// ---- Freedom parser ----
+function parseFreedom(lines) {
+  const out = [];
+  const dateRe = /^(\d{2}\.\d{2}\.\d{4})\s+([+-]?[\d\s,.]+)\s*([₸$€¥₽AED₺])\s+(KZT|USD|EUR|RUB|CNY|AED|TRY)\s+(Покупка|Платеж|Перевод|Пополнение|Снятие|Сумма в обработке|Другое|Погашение)\s*(.*)$/;
+  
+  // Freedom lines may be split — first try to find date prefix then accumulate
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(dateRe);
+    if (!m) continue;
+    
+    const [, date, amountRaw, , currency, op, detailsStart] = m;
+    let details = detailsStart || '';
+    
+    // Sometimes details continue on the next line — append ONLY if next is short
+    // and doesn't look like a separate transaction or random merchant name
+    if (i + 1 < lines.length) {
+      const next = lines[i+1];
+      const looksLikeContinuation = next.length < 60
+        && !/^\d{2}\.\d{2}\.\d{4}\s/.test(next)
+        && !/Дата|Сумма|Валюта|Операция|Детали|подлинн|проверить|QR-код|bankffin\.kz/i.test(next)
+        // Skip lines that look like a new merchant (all caps with KZ/US ending)
+        && !/^[A-Z][A-Z0-9.\s]+\s(KZ|US|EU|SE)$/.test(next)
+        // Skip lines that look like an OPENAI/STEAM/etc subscription marker
+        && !/^(OPENAI|ANTHROPIC|Spotify|SPOTIFY|STEAM|WL\s|JETPAY|YANDEX|ABAI|SAIRAN|BAIKONYR|MOMYSHULY|MAGNUM|RGKP|IP\s|TOO\s|ТОО\s)/i.test(next);
+      if (looksLikeContinuation) details += ' ' + next;
+    }
+    
+    const amount = parseAmount(amountRaw);
+    if (isNaN(amount) || currency !== 'KZT') continue; // skip non-KZT for simplicity
+    
+    out.push({
+      date: toISO(date),
+      amount: Math.abs(amount),
+      sign: amount < 0 ? -1 : 1,
+      op,
+      details: details.trim()
+    });
+  }
+  return out;
+}
+
+// ---- Halyk parser ----
+function parseHalyk(lines) {
+  const out = [];
+  // Halyk row: "DD.MM.YYYY DD.MM.YYYY Описание операции ... -SUMMA,00 KZT ..."
+  const rowRe = /^(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})\s+(.+?)\s+(-?[\d\s]+,\d{2})\s+(KZT|USD|EUR)\s+/;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(rowRe);
+    if (!m) continue;
+    
+    const [, date1, , description, amountRaw, currency] = m;
+    if (currency !== 'KZT') continue;
+    
+    const amount = parseAmount(amountRaw);
+    if (isNaN(amount)) continue;
+    
+    // Description in Halyk: "Операция оплаты у коммерсанта YANDEX.GO" or "Перевод на другую карту"
+    let op = 'Покупка';
+    let details = description;
+    const opMatch = description.match(/^(Операция оплаты у коммерсанта|Перевод на другую карту|Поступление перевода|Внутрибанковский перевод|Снятие|Платеж|Комиссия)\s*(.*)$/);
+    if (opMatch) {
+      op = opMatch[1];
+      details = opMatch[2] || opMatch[1];
+    }
+    
+    out.push({
+      date: toISO(date1),
+      amount: Math.abs(amount),
+      sign: amount < 0 ? -1 : 1,
+      op,
+      details: details.trim()
+    });
+  }
+  return out;
+}
+
+// ---- Kaspi parser ----
+function parseKaspi(lines) {
+  const out = [];
+  // Kaspi: "DD.MM.YY - SUMMA ₸ Операция Детали"
+  const rowRe = /^(\d{2}\.\d{2}\.\d{2})\s+([+-])\s*([\d\s]+,\d{2})\s*₸\s+(Покупка|Перевод|Пополнение|Перевод на свой счет|Разное|Снятие|Комиссия)\s+(.+)$/;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(rowRe);
+    if (!m) continue;
+    
+    const [, dateRaw, sign, amountRaw, op, details] = m;
+    const amount = parseAmount(amountRaw);
+    if (isNaN(amount)) continue;
+    
+    // Convert YY → 20YY
+    const [d, mo, y] = dateRaw.split('.');
+    const fullDate = `${d}.${mo}.20${y}`;
+    
+    out.push({
+      date: toISO(fullDate),
+      amount: Math.abs(amount),
+      sign: sign === '-' ? -1 : 1,
+      op,
+      details: details.trim()
+    });
+  }
+  return out;
+}
+
+function parseAmount(s) {
+  if (!s) return NaN;
+  // Strip whitespace and currency symbols, keep digits/separators/sign
+  let cleaned = s.replace(/\s/g, '').replace(/[^\d.,\-+]/g, '');
+  if (!cleaned) return NaN;
+  // Determine decimal separator: it's whichever of '.' or ',' appears last in the string
+  const lastDot = cleaned.lastIndexOf('.');
+  const lastComma = cleaned.lastIndexOf(',');
+  const decimalPos = Math.max(lastDot, lastComma);
+  if (decimalPos === -1) return parseFloat(cleaned);
+  const decimalChar = cleaned[decimalPos];
+  // The other char is the thousands separator — remove all occurrences of it
+  const thousandsChar = decimalChar === '.' ? ',' : '.';
+  cleaned = cleaned.split(thousandsChar).join('');
+  // Normalize decimal to '.'
+  if (decimalChar === ',') cleaned = cleaned.replace(',', '.');
+  return parseFloat(cleaned);
+}
+
+// Extract closing balance from statement text
+function extractClosingBalance(lines, bank) {
+  if (bank === 'freedom') {
+    // Freedom: lines like "KZ40551B729160470KZT KZT 2,660.34 ₸"
+    for (const line of lines) {
+      const m = line.match(/KZ\d+[A-Z]*KZT\s+KZT\s+([\d\s,.]+)\s*₸/);
+      if (m) {
+        const amt = parseAmount(m[1]);
+        if (!isNaN(amt)) return amt;
+      }
+    }
+  } else if (bank === 'halyk') {
+    // Halyk: "Исходящий остаток: 17 598,56 KZT;"
+    for (const line of lines) {
+      const m = line.match(/Исходящий остаток:?\s*([\d\s,.]+)\s*KZT/i);
+      if (m) {
+        const amt = parseAmount(m[1]);
+        if (!isNaN(amt)) return amt;
+      }
+    }
+  } else if (bank === 'kaspi') {
+    // Kaspi: "Доступно на DD.MM.YY: + 0,00 ₸"
+    // Take the LAST one found (latest date)
+    let lastBal = null;
+    for (const line of lines) {
+      const m = line.match(/Доступно на[^:]+:\s*[+\-]?\s*([\d\s,.]+)\s*₸/i);
+      if (m) {
+        const amt = parseAmount(m[1]);
+        if (!isNaN(amt)) lastBal = amt;
+      }
+    }
+    return lastBal;
+  }
+  return null;
+}
+
+// Extract statement formation date (for anchor date)
+function extractStatementDate(lines, bank) {
+  if (bank === 'freedom') {
+    for (const line of lines) {
+      const m = line.match(/Дата:\s*(\d{2}\.\d{2}\.\d{4})/);
+      if (m) return toISO(m[1]);
+    }
+  } else if (bank === 'halyk') {
+    for (const line of lines) {
+      const m = line.match(/Дата формирования выписки:?\s*(\d{2}\.\d{2}\.\d{4})/i);
+      if (m) return toISO(m[1]);
+    }
+  } else if (bank === 'kaspi') {
+    // "Доступно на DD.MM.YY:" — take the LAST one
+    let lastDate = null;
+    for (const line of lines) {
+      const m = line.match(/Доступно на\s+(\d{2}\.\d{2}\.\d{2}):/);
+      if (m) {
+        const [d, mo, y] = m[1].split('.');
+        lastDate = `20${y}-${mo}-${d}`;
+      }
+    }
+    return lastDate;
+  }
+  return todayISO();
+}
+
+const BANK_TO_ACCOUNT = {
+  freedom: 'freedom_main',
+  halyk:   'halyk_main',
+  kaspi:   'kaspi_main'
+};
+
+function toISO(ddmmyyyy) {
+  const parts = ddmmyyyy.split('.');
+  if (parts.length !== 3) return '';
+  return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+}
+
+// ---- UI: Import modal ----
+function openImportModal() {
+  document.getElementById('importModal').classList.add('open');
+  document.getElementById('importTitle').textContent = `Импорт: ${BANK_NAMES[currentImportBank]}`;
+}
+function closeImportModal() {
+  document.getElementById('importModal').classList.remove('open');
+  parsedTxns = [];
+}
+
+function showImportLoading() {
+  document.getElementById('importBody').innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Читаю PDF и ищу операции...</div>
+    </div>
+  `;
+}
+
+function showImportError(msg) {
+  document.getElementById('importBody').innerHTML = `
+    <div class="empty">
+      <div class="empty-icon">⚠</div>
+      <div style="margin-bottom:14px;">${msg}</div>
+      <button class="btn btn-ghost" onclick="closeImportModal()">Закрыть</button>
+    </div>
+  `;
+}
+
+function showImportPreview() {
+  renderImportPreview();
+}
+
+function renderImportPreview() {
+  const t = parsedTxns;
+  const total = t.length;
+  const selected = t.filter(x => x.selected && !x.duplicate);
+  const expense = selected.filter(x => x.sign < 0).reduce((s, x) => s + x.amount, 0);
+  const income = selected.filter(x => x.sign > 0).reduce((s, x) => s + x.amount, 0);
+  
+  // Filter
+  let view = t;
+  if (importFilter === 'expense') view = t.filter(x => x.sign < 0 && x.category !== '_transfer');
+  else if (importFilter === 'income') view = t.filter(x => x.sign > 0 && x.category !== '_transfer');
+  else if (importFilter === 'transfer') view = t.filter(x => x.category === '_transfer');
+  else if (importFilter === 'new') view = t.filter(x => !x.duplicate);
+  
+  const dupCount = t.filter(x => x.duplicate).length;
+  const transferCount = t.filter(x => x.category === '_transfer').length;
+  
+  const html = `
+    <div class="import-summary">
+      <div class="import-stat">
+        <div class="import-stat-label">Найдено</div>
+        <div class="import-stat-value">${total}</div>
+      </div>
+      <div class="import-stat">
+        <div class="import-stat-label">Расход выбран</div>
+        <div class="import-stat-value">${fmt(expense)}</div>
+      </div>
+      <div class="import-stat">
+        <div class="import-stat-label">Доход выбран</div>
+        <div class="import-stat-value">${fmt(income)}</div>
+      </div>
+    </div>
+    
+    ${parsedClosingBalance !== null ? `
+    <div class="card" style="margin-bottom:14px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em;">Остаток в выписке</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;margin-top:2px;">${fmt(parsedClosingBalance)} ₸</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-muted);">на ${parsedStatementDate || '—'}</div>
+          <div style="font-size:11px;color:var(--positive);margin-top:2px;">⚓ якорь будет обновлён</div>
+        </div>
+      </div>
+    </div>` : ''}
+    
+    <div class="import-toolbar">
+      <button class="pill ${importFilter==='all'?'active':''}" onclick="setImportFilter('all')">Все ${total}</button>
+      <button class="pill ${importFilter==='expense'?'active':''}" onclick="setImportFilter('expense')">Расходы</button>
+      <button class="pill ${importFilter==='income'?'active':''}" onclick="setImportFilter('income')">Доходы</button>
+      ${transferCount > 0 ? `<button class="pill ${importFilter==='transfer'?'active':''}" onclick="setImportFilter('transfer')">Переводы ${transferCount}</button>` : ''}
+      ${dupCount > 0 ? `<button class="pill ${importFilter==='new'?'active':''}" onclick="setImportFilter('new')">Только новые</button>` : ''}
+    </div>
+    
+    <div class="import-toolbar">
+      <button class="pill" onclick="toggleAll(true)">Выбрать всё</button>
+      <button class="pill" onclick="toggleAll(false)">Снять всё</button>
+    </div>
+    
+    ${dupCount > 0 ? `<div class="info-text" style="margin-bottom:10px;">Серым выделены ${dupCount} операций, которые похоже уже импортированы ранее.</div>` : ''}
+    
+    <div class="import-scroll" id="importRows">
+      ${view.map(renderImportRow).join('') || '<div class="empty"><div class="empty-icon">○</div>Нет операций под фильтр</div>'}
+    </div>
+    
+    <div class="import-sticky-footer">
+      <button class="btn btn-primary" onclick="confirmImport()">
+        Импортировать выбранные (${selected.length})
+      </button>
+      <button class="btn btn-ghost" onclick="closeImportModal()">Отменить</button>
+    </div>
+  `;
+  
+  document.getElementById('importBody').innerHTML = html;
+}
+
+function renderImportRow(t) {
+  const sign = t.sign < 0 ? '−' : '+';
+  const cls = t.sign < 0 ? 'negative' : 'positive';
+  const dateShort = t.date.slice(5).replace('-', '.');
+  const detailsShort = (t.details || '').slice(0, 50);
+  const cats = [
+    { id: 'needs', name: 'Нужды' },
+    { id: 'rassrochka', name: 'Рассрочка' },
+    { id: 'reward_compy', name: 'Компы/бар' },
+    { id: 'reward_gf', name: 'Девушка' },
+    { id: 'reward_other', name: 'Другое удовольствие' },
+    { id: 'assets', name: 'Инвестиции' },
+    { id: '_transfer', name: '→ Между своими' },
+    { id: '_skip', name: '✕ Пропустить' }
+  ];
+  return `
+    <div class="import-row ${t.selected?'selected':''} ${t.duplicate?'duplicate':''}" data-id="${t.id}">
+      <div class="import-check" onclick="toggleRow('${t.id}')">${t.selected?'✓':''}</div>
+      <div class="import-info">
+        <div class="import-info-line1">${detailsShort || t.op}</div>
+        <div class="import-info-line2">${dateShort} · ${t.op}${t.duplicate?' · уже есть':''}</div>
+      </div>
+      <div class="import-amount ${cls}">${sign}${fmt(t.amount)}</div>
+      <select onchange="changeCategory('${t.id}', this.value)">
+        ${cats.map(c => `<option value="${c.id}" ${c.id===t.category?'selected':''}>${c.name}</option>`).join('')}
+      </select>
+    </div>
+  `;
+}
+
+function setImportFilter(f) {
+  importFilter = f;
+  renderImportPreview();
+}
+
+function toggleRow(id) {
+  const t = parsedTxns.find(x => x.id === id);
+  if (!t) return;
+  t.selected = !t.selected;
+  renderImportPreview();
+}
+
+function toggleAll(val) {
+  parsedTxns.forEach(t => {
+    if (t.duplicate) return; // never auto-select duplicates
+    // Respect current filter
+    if (importFilter === 'expense' && (t.sign >= 0 || t.category === '_transfer')) return;
+    if (importFilter === 'income' && (t.sign <= 0 || t.category === '_transfer')) return;
+    if (importFilter === 'transfer' && t.category !== '_transfer') return;
+    if (importFilter === 'new' && t.duplicate) return;
+    t.selected = val;
+  });
+  renderImportPreview();
+}
+
+function changeCategory(id, newCat) {
+  const t = parsedTxns.find(x => x.id === id);
+  if (!t) return;
+  t.category = newCat;
+  if (newCat === '_skip') t.selected = false;
+  renderImportPreview();
+}
+
+function confirmImport() {
+  const selected = parsedTxns.filter(t => t.selected && !t.duplicate && t.category !== '_skip');
+  if (selected.length === 0 && parsedClosingBalance === null) { alert('Не выбрано ни одной операции'); return; }
+  
+  const accountId = BANK_TO_ACCOUNT[currentImportBank];
+  let confirmMsg = `Импортировать ${selected.length} операций на счёт «${getAccount(accountId).name}»?`;
+  if (parsedClosingBalance !== null) {
+    confirmMsg += `\n\nЯкорь баланса будет установлен на ${fmt(parsedClosingBalance)} ₸ (дата ${parsedStatementDate}).`;
+  }
+  if (!confirm(confirmMsg)) return;
+  
+  let added = 0;
+  selected.forEach(t => {
+    let bucket, type, category;
+    if (t.category === '_transfer') {
+      type = t.sign > 0 ? 'income' : 'expense';
+      category = '_transfer';
+      bucket = null;
+    } else if (t.sign > 0) {
+      type = 'income';
+      category = null;
+      bucket = null;
+    } else {
+      type = 'expense';
+      category = t.category;
+      const catObj = EXPENSE_CATEGORIES.find(c => c.id === t.category);
+      bucket = catObj ? catObj.bucket : 'needs';
+    }
+    
+    state.txns.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      importId: t.id,
+      type,
+      amount: t.amount,
+      date: t.date,
+      note: `[${t.bank.toUpperCase()}] ${(t.details || '').slice(0, 60)}`,
+      category,
+      bucket,
+      bank: t.bank,
+      accountId,
+      isTransfer: t.category === '_transfer'
+    });
+    added++;
+  });
+  
+  // Update anchor from statement
+  if (parsedClosingBalance !== null && parsedStatementDate) {
+    const acc = getAccount(accountId);
+    if (acc) {
+      acc.anchorBalance = parsedClosingBalance;
+      acc.anchorDate = parsedStatementDate;
+    }
+  }
+  
+  save();
+  render();
+  closeImportModal();
+  alert(`Импортировано ${added} операций. Баланс «${getAccount(accountId).name}» обновлён.`);
+}
+
+// =================== INIT ===================
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => switchView(t.dataset.view));
+});
+document.getElementById('addModal').addEventListener('click', (e) => {
+  if (e.target.id === 'addModal') closeAddModal();
+});
+document.getElementById('importModal').addEventListener('click', (e) => {
+  if (e.target.id === 'importModal') closeImportModal();
+});
+['calcPmt', 'calcYears', 'calcRate'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderCalculator);
+});
+
+// Update header date
+(function updateHeaderDate() {
+  const d = new Date();
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  document.querySelector('#view-home .eyebrow').textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+})();
+
+load();
+render();
+</script>
+</body>
+</html>
